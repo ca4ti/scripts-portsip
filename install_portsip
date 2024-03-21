@@ -1,0 +1,33 @@
+cd /opt/portsip && /bin/sh pbx_ctl.sh stop
+#docker image rm $(docker image list | awk '/[0-9]/ {print $3}' )
+rm install_pbx_docker.sh
+rm install_docker.sh
+rm pbx_ctl.sh
+
+curl https://raw.githubusercontent.com/portsip/portsip-pbx-sh/master/v16.x/new/install_docker.sh \
+-o install_docker.sh
+curl https://raw.githubusercontent.com/portsip/portsip-pbx-sh/master/v16.x/new/pbx_ctl.sh \
+-o pbx_ctl.sh
+
+/bin/sh install_docker.sh
+
+/bin/sh pbx_ctl.sh \
+run -p /var/lib/portsip \
+-a 46.37.240.110 \
+-i portsip/pbx:16
+
+
+
+echo https://support.portsip.com/portsip-sbc-administration-guide/upgrading-portsip-sbc-to-new-versions
+cd /opt/portsip
+/bin/sh sbc_ctl.sh stop
+/bin/sh sbc_ctl.sh rm
+docker image list
+#docker image rm $(docker image list | awk '/[0-9]/ {print $3}' )
+rm install_docker.sh && rm install_sbc_docker.sh && rm sbc_ctl.sh
+curl https://raw.githubusercontent.com/portsip/portsip-pbx-sh/master/v16.x/new/install_docker.sh \
+-o install_docker.sh
+curl https://raw.githubusercontent.com/portsip/portsip-pbx-sh/master/v16.x/new/sbc_ctl.sh \
+-o sbc_ctl.sh
+/bin/sh install_docker.sh
+/bin/sh sbc_ctl.sh run -p /var/lib/portsip -i portsip/sbc:10
