@@ -1,0 +1,39 @@
+#!/bin/bash
+unset HTTPS_PROXY
+unset HTTP_PROXY
+unset http_proxy
+unset https_proxy
+ps aux | grep [f]NT || ssh -D 8080 root@10.0.0.2 -fNT -p 911
+cp -Rf /.docker/ /root
+cd /opt/portsip
+docker stop $(docker ps -a -q)
+docker image rm $(docker image list | awk '/[0-9]/ {print $3}' )
+/bin/sh cluster_ctl.sh rm -s vr-server-1
+
+cp /lib/systemd/system/docker.service /
+
+#Environment="ALL_PROXY=socks5://127.0.0.1:8080"
+#Environment="HTTP_PROXY=socks5://127.0.0.1:8080"
+#Environment="HTTPS_PROXY=socks5://127.0.0.1:8080"
+
+vi /lib/systemd/system/docker.service
+
+systemctl daemon-reload
+systemctl restart docker
+
+curl https://raw.githubusercontent.com/portsip/portsip-pbx-sh/master/v16.x/new/install_docker.sh \
+-o install_docker.sh
+curl https://raw.githubusercontent.com/portsip/portsip-pbx-sh/master/v16.x/new/cluster_ctl.sh \
+-o cluster_ctl.sh
+/bin/sh install_docker.sh
+
+/bin/sh cluster_ctl.sh run -p /var/lib/portsip -a 10.0.0.6 -x 10.0.0.2 -i portsip/pbx:16 -s vr-server-only -n vr-server-1
+
+rm -Rf /root/.docker
+cp /docker.service /lib/systemd/system/docker.service
+
+systemctl daemon-reload
+systemctl restart docker
+ps aux | grep [f]NT | awk '{print "kill " $2}'  | bash
+docker ps
+docker exec -it $(docker ps | awk '/[0-9]/ {print $1}' ) bash -c "env"
