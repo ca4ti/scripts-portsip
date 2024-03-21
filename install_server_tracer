@@ -1,0 +1,46 @@
+#!/bin/bash
+unset HTTPS_PROXY
+unset HTTP_PROXY
+unset http_proxy
+unset https_proxy
+ps aux | grep [f]NT || ssh -D 8080 root@10.0.0.2 -fNT -p 911
+cp -Rf /.docker/ /root
+cd /opt/portsip
+docker stop $(docker ps -a -q)
+docker image rm $(docker image list | awk '/[0-9]/ {print $3}' )
+cd /opt/portsip-trace && /bin/sh trace_ctl.sh stop && /bin/sh trace_ctl.sh rm
+
+cp /lib/systemd/system/docker.service /
+
+#Environment="ALL_PROXY=socks5://127.0.0.1:8080"
+#Environment="HTTP_PROXY=socks5://127.0.0.1:8080"
+#Environment="HTTPS_PROXY=socks5://127.0.0.1:8080"
+
+#    environment:
+#      - LD_LIBRARY_PATH=/usr/local/lib
+#      - HTTP_PROXY=
+#      - HTTPS_PROXY=
+#      - http_proxy=
+#      - https_proxy=
+
+vi /lib/systemd/system/docker.service
+
+systemctl daemon-reload
+systemctl restart docker
+
+#curl --socks5-hostname 127.0.0.1:8080 https://raw.githubusercontent.com/portsip/portsip-pbx-sh/master/v16.x/new/install_docker.sh -o install_docker.sh
+#curl --socks5-hostname 127.0.0.1:8080 https://raw.githubusercontent.com/portsip/portsip-pbx-sh/master/v16.x/new/trace_ctl.sh -o trace_ctl.sh
+vi /opt/portsip/trace_ctl.sh
+
+cd /opt/portsip-trace && /bin/sh install_docker.sh
+cd /opt/portsip-trace && /bin/sh trace_ctl.sh run -p /mnt -k 30 -l 9080 -z 9061
+
+rm -Rf /root/.docker
+cp /docker.service /lib/systemd/system/docker.service
+
+systemctl daemon-reload
+systemctl restart docker
+ps aux | grep [f]NT | awk '{print "kill " $2}'  | bash
+docker ps
+#docker exec -it $(docker ps | awk '/[0-9]/ {print $1}' ) bash -c "env"
+for i in  $(docker ps | awk '/[0-9]/ {print $1}' ) ; do echo $i ; docker exec -it $i bash -c "env" ; done
